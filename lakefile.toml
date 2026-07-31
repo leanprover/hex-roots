@@ -1,0 +1,15 @@
+name = "hex-roots"
+defaultTargets = ["HexRoots"]
+
+leanOptions = [
+  { name = "doc.verso", value = true },
+  { name = "doc.verso.suggestions", value = false },
+]
+
+[[require]]
+name = "HexPolyZ"
+git = "https://github.com/leanprover/hex-poly-z.git"
+rev = "9ae13de5ecabbcb2e418505e6463187ee89e5d46"
+
+[[lean_lib]]
+name = "HexRoots"

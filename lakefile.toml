@@ -9,7 +9,7 @@ leanOptions = [
 [[require]]
 name = "HexPolyZ"
 git = "https://github.com/leanprover/hex-poly-z.git"
-rev = "e7b22902bf8001f15fbc0378bfae3a16197a8f5a"
+rev = "7d7fdebb1bde00648a951177e3042a3ffbb2a8ea"
 
 [[lean_lib]]
 name = "HexRoots"

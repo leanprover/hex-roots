@@ -425,6 +425,13 @@ def isolateAll? (p : ZPoly) (target : Int) (worklist : Array Component)
 def isolate (p : ZPoly) (h : Hex.HasOnlySimpleRoots p) (atom_prec : Int)
     (strategy : AtomStrategy := .nkThenPellet) :
     Option (Array (DyadicRootIsolation p))
+
+/-- Start a local search from `seed`, return the first simple root certified,
+    and refine it to at least `max atomPrec (mahlerPrec p)`. The result need
+    not remain geometrically inside the seed. -/
+def isolateOne? (p : ZPoly) (atomPrec : Int) (seed : DyadicSquare)
+    (strategy : AtomStrategy := .nkThenPellet) :
+    Option (RefinedIsolation p)
 ```
 
 `certify?` computes one exact Taylor shift at its enclosing-square centre and
@@ -543,6 +550,19 @@ non-squarefree inputs. A `none` from a driver means only that its full
 emission condition was not reached within the fixed fuel bound; it does
 not mean that no individual certificate appeared. Soundness remains
 conditional on a `some` result for arbitrary inputs.
+
+`isolateOne?` is the local counterpart for clients that need one certified
+simple root rather than a complete root family. It starts from the caller's
+untrusted seed, subdivides and certifies components until it finds an atom,
+then refines that atom to `max atomPrec (mahlerPrec p)`. It tries every atom
+certified in a round before subdividing again, so failure to refine one
+candidate does not discard another. The returned `AtomCertificate` is a
+self-contained proof that its certified region contains exactly one simple
+root; soundness therefore does not require pairwise separation from atoms
+outside that region. The seed chooses the initial search, not a containment
+postcondition: survivor squares and their certified discs can extend outside
+it. This weaker output is sufficient for `SimpleRoot.mk` and avoids refining
+all roots merely to select one.
 
 The one-atom `DyadicRootIsolation.refineTo?` wrapper first spends a fixed small
 budget on the lineage-local transition, preserving the logarithmic precision
@@ -828,12 +848,13 @@ is made here for pure Pellet refinement of a non-squarefree ambient polynomial.
   k-order component forms) using `Dyadic.invAtPrec`.
 - `HexRoots/Bisection.lean`: 4-way subdivision, `T_0` discard,
   component gluing: `Component.refine1` and `Component.certify?`.
-- `HexRoots/Refine.lean`: the shared fuel-based driver loop over the
-  worklist, `stopDepth`, the Φ termination measure discussion, and
-  `DyadicRootIsolation.refineTo?` as a thin wrapper.
-- `HexRoots/IsolateAll.lean`: `isolateAll?` and `isolate` as thin
-  wrappers over the shared driver loop, and the refined threading
-  operation `RefinedIsolation.refineTo?` (below).
+- `HexRoots/Refine.lean`: the shared fuel-based driver loops over the
+  worklist, including the local first-refinable-atom search, `stopDepth`, the
+  Φ termination measure discussion, and `DyadicRootIsolation.refineTo?` as a
+  thin wrapper.
+- `HexRoots/IsolateAll.lean`: `isolateAll?`, `isolate`, and the local
+  `isolateOne?` entry point as thin wrappers over the shared driver loops, and
+  the refined threading operation `RefinedIsolation.refineTo?` (below).
 - `HexRoots/SimpleRoot.lean`: `RefinedIsolation`, `Intersects`,
   `SimpleRoot`, `sameRoot`, and the constructor
   `DyadicRootIsolation.toRefined?`; the threading-pattern guidance
@@ -862,9 +883,13 @@ polynomials rarely have clustered roots.
   - 50 degree-20 polynomials with deterministic seed `0xC0FFEE` and
     coefficients in `[−10, 10]`, cross-checked against the python-flint
     oracle (below), plus the six curated atom/cluster cases retained for
-    explicit simple/multiple-root coverage. Fresh emission of the full stream
-    takes about 5.2 minutes on `chungus2`; at degree 20 the all-atoms local
-    finisher supplies the speedup, while the size-gated soft front end is idle.
+    explicit simple/multiple-root coverage. The emitter computes cases in
+    parallel tasks and writes records in case order, so the stream stays
+    byte-identical to sequential emission; fresh emission of the full
+    stream takes about 11 seconds on `chungus2` (about 4.8 CPU-minutes,
+    `HEX_EMIT_JOBS` caps the outstanding tasks). At degree 20 the
+    all-atoms local finisher supplies the per-case speedup, while the
+    size-gated soft front end is idle.
 - *local* (developer-driven):
   - Adversarial families cross-checked against MPSolve: Mignotte
     `(n, a)` for `n ∈ {10, 20}` and `a ∈ {1000, 10⁶}`, the Wilkinson

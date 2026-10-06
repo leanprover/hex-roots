@@ -136,6 +136,13 @@ exact cached comparison first below precision 32 and soft-first above it. A
 soft success implies the ordinary `witness` proposition. Failure at every tier
 invokes the exact cached-shift test and has no semantic meaning.
 
+The subdivision discard `rootFree` keeps an exact fallback. Before constructing
+the rounded Taylor array, its soft filter checks the constant-coefficient ball.
+If that ball contains zero, it skips Graeffe iteration: the coefficient
+uncertainty permits a root at the centre, so this route cannot certify exclusion.
+Other precision tiers and the exact fallback remain available. Smaller
+polynomials continue to use the exact check directly.
+
 ## Newton-Kantorovich atom witnesses
 
 Atoms admit a second certificate form, carried alongside the Pellet
@@ -922,21 +929,18 @@ oracle for the adversarial corpus; it is not a Phase-4 performance comparator
 and is not wired into merge-facing CI. SageMath is not used (per
 SPEC/testing.md's Sage policy).
 
-For Phase 4 python-flint is classified `informational` (per
-[SPEC/benchmarking.md §Comparator classification](../../SPEC/benchmarking.md#comparator-classification-gating-vs-informational)):
+For Phase 4 python-flint is an orientation comparator (per
+[SPEC/benchmarking.md §External comparators](../../SPEC/benchmarking.md#external-comparators)):
 python-flint `fmpz_poly.complex_roots` is a multiprecision ball engine
 computing approximate root inclusions, structurally different from this
 library's decidable exact-integer Pellet / Newton-Kantorovich certificates,
-so its ratios orient but do not gate, and the yardstick is the "Time budgets"
-targets above rather than a constant-factor goal. It is scoped to the
+so its ratios are for orientation only, and the yardstick is the "Time budgets"
+targets below rather than a constant-factor goal. It is scoped to the
 whole-polynomial `runIsolate` and `runIsolateAll` surfaces. Separation-bound
 calculation (`runMahlerPrec`), Taylor shift, witness checks, Newton steps,
 component refinement/certification, refined-atom operations, and the individual
-strategy routes are declared
-**no-comparable-surface-in-named-comparator**: FLINT uses analogous kernels
-internally but does not expose them as callable performance surfaces. The
-classification and rationale are mirrored in
-`libraries.yml: HexRoots.phase4.comparators`.
+strategy routes have no external comparator: FLINT uses analogous kernels
+internally but does not expose them as callable performance surfaces.
 
 ## Complexity contract
 
@@ -992,8 +996,8 @@ https://github.com/kim-em/hex-dev/issues/8751
 records the Graeffe, soft-Pellet, Taylor-reuse, and local-finisher ratchet. Any
 later improvement re-measures the table and tightens the ceilings again rather
 than accumulating slack.
-MPSolve remains a local correctness oracle. The declared informational
-performance comparator is python-flint, whose measured ratios are recorded in
+MPSolve remains a local correctness oracle. The performance comparator is
+python-flint, whose measured ratios are recorded in
 [`reports/hex-roots-performance.md`](../../reports/hex-roots-performance.md).
 
 ## References
